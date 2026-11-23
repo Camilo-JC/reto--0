@@ -7,6 +7,9 @@ y diseño responsivo con Bootstrap 5.
 import os
 from functools import wraps
 from datetime import date, datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 from flask import (
     Flask,
     render_template,
@@ -23,8 +26,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 import database as db
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "biblioteca-secreta-clave-super-segura-2026")
-
+app.secret_key = os.environ.get("SECRET_KEY")
 
 # ==========================================
 # Helpers de Autenticación y Contexto
