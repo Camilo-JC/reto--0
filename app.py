@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from flask import (
     Flask,
+    abort,
     flash,
     g,
     redirect,
@@ -519,8 +520,7 @@ def loan_return(loan_id):
 
     # Permitir si es admin O si es el mismo usuario lector que lo tiene prestado
     if g.user["role"] != "admin" and g.user["id"] != loan["user_id"]:
-        flash("No tienes permiso para devolver este préstamo.", "danger")
-        return redirect(url_for("loans_list"))
+        abort(403)
 
     success, error = db.return_loan(loan_id)
     if not success:

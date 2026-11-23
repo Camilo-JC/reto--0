@@ -35,3 +35,4 @@ Permite gestionar el catálogo e inventario con roles de administrador y lector.
 - No hacer commit ni push automáticamente sin autorización explícita.
 
 ## Lecciones aprendidas
+- Control de acceso: las operaciones no autorizadas sobre recursos de otro usuario se rechazan con código 403 Forbidden, nunca con redirección 302.
