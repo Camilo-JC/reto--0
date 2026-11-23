@@ -130,8 +130,13 @@ def register():
         errors = []
         if not username or len(username) < 3:
             errors.append("El nombre de usuario debe tener al menos 3 caracteres.")
+        elif len(username) > 50:
+            errors.append("El nombre de usuario no debe superar los 50 caracteres.")
+
         if not full_name:
             errors.append("El nombre completo es obligatorio.")
+        elif len(full_name) > 100:
+            errors.append("El nombre completo no debe superar los 100 caracteres.")
         if not email or "@" not in email:
             errors.append("Ingresa un correo electrónico válido.")
         if not password or len(password) < 6:
