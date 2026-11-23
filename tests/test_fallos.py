@@ -61,3 +61,14 @@ def test_validacion_entradas_registro_rechaza_texto_excesivo():
     # No debe crear registros si la entrada es inválida
     assert total_despues == total_antes
     assert b"no debe superar" in respuesta.data
+
+def test_manejo_errores_libro_inexistente_retorna_404():
+    """
+    Comprueba que al solicitar un libro inexistente (/books/99999), la aplicación
+    responda con código HTTP 404 Not Found y no exponga trazas de error (Traceback).
+    """
+    cliente = app.test_client()
+    respuesta = cliente.get("/books/99999")
+
+    assert respuesta.status_code == 404
+    assert b"Traceback" not in respuesta.data

@@ -269,8 +269,7 @@ def catalog():
 def book_detail(book_id):
     book = db.get_book_by_id(book_id)
     if not book:
-        flash("Libro no encontrado.", "danger")
-        return redirect(url_for("catalog"))
+        abort(404)
 
     user_has_loan = False
     active_loan = None
@@ -363,8 +362,7 @@ def book_create():
 def book_edit(book_id):
     book = db.get_book_by_id(book_id)
     if not book:
-        flash("Libro no encontrado.", "danger")
-        return redirect(url_for("catalog"))
+        abort(404)
 
     if request.method == "POST":
         title = request.form.get("title", "").strip()
@@ -414,8 +412,7 @@ def book_edit(book_id):
 def book_delete(book_id):
     book = db.get_book_by_id(book_id)
     if not book:
-        flash("Libro no encontrado.", "danger")
-        return redirect(url_for("catalog"))
+        abort(404)
 
     success, error = db.delete_book(book_id)
     if not success:
@@ -571,6 +568,14 @@ def users_list():
 
     users = db.get_all_users()
     return render_template("users.html", users=users)
+
+
+# ==========================================
+# Manejo de Errores HTTP
+# ==========================================
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("404.html"), 404
 
 
 # ==========================================
