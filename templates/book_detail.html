@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book['title'] }}{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{{ url_for('catalog') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Volver al Catálogo
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Columna Principal: Información del Libro -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6 px-3 py-2">
+                        {{ book['category'] }}
+                    </span>
+                    
+                    {% if book['available_copies'] > 0 %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle fs-6 px-3 py-2">
+                        <i class="bi bi-check-circle me-1"></i> {{ book['available_copies'] }} disponibles de {{ book['total_copies'] }} copias
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle fs-6 px-3 py-2">
+                        <i class="bi bi-exclamation-circle me-1"></i> Agotado temporalmente (0 de {{ book['total_copies'] }})
+                    </span>
+                    {% endif %}
+                </div>
+
+                <h1 class="fw-bold mb-2 text-dark">{{ book['title'] }}</h1>
+                <h5 class="text-muted mb-4">Por <strong>{{ book['author'] }}</strong> {% if book['publication_year'] %}&bull; Año {{ book['publication_year'] }}{% endif %}</h5>
+
+                <div class="row g-3 py-3 border-top border-bottom my-4 bg-light rounded-3 px-2">
+                    <div class="col-sm-4">
+                        <small class="text-muted text-uppercase fw-semibold d-block">Código ISBN</small>
+                        <span class="fw-semibold text-dark">{{ book['isbn'] }}</span>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted text-uppercase fw-semibold d-block">Total de Ejemplares</small>
+                        <span class="fw-semibold text-dark">{{ book['total_copies'] }} unidades</span>
+                    </div>
+                    <div class="col-sm-4">
+                        <small class="text-muted text-uppercase fw-semibold d-block">En Préstamo</small>
+                        <span class="fw-semibold text-dark">{{ book['total_copies'] - book['available_copies'] }} prestados</span>
+                    </div>
+                </div>
+
+                <h5 class="fw-bold mb-3"><i class="bi bi-text-paragraph text-primary me-2"></i>Sinopsis / Descripción</h5>
+                <p class="lead fs-6 text-secondary" style="line-height: 1.8;">
+                    {{ book['description'] or 'No se ha agregado una descripción detallada para este libro.' }}
+                </p>
+
+                <!-- Barra de Disponibilidad -->
+                <div class="mt-4">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span>Disponibilidad en estantería</span>
+                        <span>{{ (book['available_copies'] / book['total_copies'] * 100) | round }}%</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        {% set pct = (book['available_copies'] / book['total_copies'] * 100) %}
+                        <div class="progress-bar {% if pct > 50 %}bg-success{% elif pct > 0 %}bg-warning{% else %}bg-danger{% endif %}" 
+                             role="progressbar" 
+                             style="width: {{ pct }}%;" 
+                             aria-valuenow="{{ pct }}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Si es Admin, mostrar historial de préstamos del libro -->
+        {% if g.user and g.user['role'] == 'admin' %}
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Historial de Préstamos de este Libro</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Lector</th>
+                                <th>Fecha Préstamo</th>
+                                <th>Fecha Límite</th>
+                                <th>Fecha Devolución</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if loan_history %}
+                                {% for loan in loan_history %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ loan['user_name'] }}</strong>
+                                        <div class="small text-muted">{{ loan['user_email'] }}</div>
+                                    </td>
+                                    <td>{{ loan['loan_date'] }}</td>
+                                    <td>{{ loan['due_date'] }}</td>
+                                    <td>{{ loan['return_date'] or '-' }}</td>
+                                    <td>
+                                        <span class="badge badge-status-{{ loan['status'] }} text-capitalize">
+                                            {{ loan['status'] }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">Aún no hay préstamos registrados para este libro.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Columna Lateral: Acciones según Rol -->
+    <div class="col-lg-4">
+        <!-- Acciones para Lectores -->
+        {% if g.user and g.user['role'] == 'lector' %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-bookmark-star text-primary me-2"></i>Solicitar Préstamo</h5>
+                </div>
+                <div class="card-body">
+                    {% if user_has_loan %}
+                        <div class="alert alert-info border-0 mb-3">
+                            <h6 class="fw-bold"><i class="bi bi-info-circle-fill me-1"></i> Ya tienes este libro</h6>
+                            <p class="small mb-1">Actualmente tienes un préstamo activo de este título.</p>
+                            <p class="small mb-2">Fecha límite de devolución: <strong>{{ active_loan['due_date'] }}</strong></p>
+                            <form method="POST" action="{{ url_for('loan_return', loan_id=active_loan['id']) }}">
+                                <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                                    <i class="bi bi-arrow-return-left me-1"></i> Devolver Libro Ahora
+                                </button>
+                            </form>
+                        </div>
+                    {% elif book['available_copies'] > 0 %}
+                        <p class="text-muted small">Puedes solicitar este libro en préstamo inmediatamente. Selecciona la duración deseada:</p>
+                        
+                        <form method="POST" action="{{ url_for('loan_request', book_id=book['id']) }}">
+                            <div class="mb-3">
+                                <label for="days" class="form-label fw-semibold">Duración del préstamo:</label>
+                                <select class="form-select" id="days" name="days">
+                                    <option value="7">7 días (1 semana)</option>
+                                    <option value="14" selected>14 días (2 semanas)</option>
+                                    <option value="21">21 días (3 semanas)</option>
+                                    <option value="30">30 días (1 mes)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notes" class="form-label fw-semibold">Nota o motivo (opcional):</label>
+                                <input type="text" class="form-control" id="notes" name="notes" placeholder="ej. Para lectura de curso">
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                                <i class="bi bi-check-circle me-1"></i> Confirmar Préstamo
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-warning border-0 text-center mb-0">
+                            <i class="bi bi-clock-history fs-3 d-block mb-2"></i>
+                            <strong>No hay ejemplares disponibles</strong>
+                            <p class="small mb-0 mt-1">Todos los ejemplares están actualmente en préstamo. Vuelve a consultar más adelante.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% elif not g.user %}
+            <div class="card shadow-sm border-0 mb-4 bg-light">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-person-lock fs-1 text-primary mb-2 d-block"></i>
+                    <h5 class="fw-bold">¿Deseas pedir este libro?</h5>
+                    <p class="text-muted small">Inicia sesión con tu cuenta de lector o regístrate de forma gratuita para gestionar préstamos.</p>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary">Iniciar Sesión</a>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-secondary">Crear Cuenta</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Acciones Administrativas (Admin) -->
+        {% if g.user and g.user['role'] == 'admin' %}
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-gear text-primary me-2"></i>Acciones de Administrador</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if book['available_copies'] > 0 %}
+                        <a href="{{ url_for('loan_create', book_id=book['id']) }}" class="btn btn-outline-primary text-start">
+                            <i class="bi bi-arrow-left-right me-2"></i> Asignar Préstamo a Lector
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('book_edit', book_id=book['id']) }}" class="btn btn-outline-secondary text-start">
+                            <i class="bi bi-pencil me-2"></i> Editar Información o Copias
+                        </a>
+                        
+                        <button type="button" class="btn btn-outline-danger text-start" data-bs-toggle="modal" data-bs-target="#deleteBookModal">
+                            <i class="bi bi-trash me-2"></i> Eliminar del Catálogo
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Confirmar Eliminación -->
+            <div class="modal fade" id="deleteBookModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title text-danger fw-bold" id="deleteModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Eliminar Libro</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            ¿Estás seguro de que deseas eliminar permanentemente el libro <strong>"{{ book['title'] }}"</strong>? Esta acción no se puede deshacer.
+                            {% if book['total_copies'] != book['available_copies'] %}
+                            <div class="alert alert-warning mt-3 mb-0 small">
+                                <i class="bi bi-info-circle me-1"></i> Nota: No se puede eliminar si hay copias prestadas activas sin devolver.
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <form method="POST" action="{{ url_for('book_delete', book_id=book['id']) }}">
+                                <button type="submit" class="btn btn-danger">Eliminar Definitivamente</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

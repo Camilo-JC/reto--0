@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle text-primary rounded-circle mb-3" style="width: 64px; height: 64px;">
+                        <i class="bi bi-box-arrow-in-right fs-2"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Iniciar Sesión</h3>
+                    <p class="text-muted small">Ingresa tus credenciales para acceder a la biblioteca</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('login') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-semibold">Nombre de usuario</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="ej. admin o lector" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-semibold">Contraseña</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold mb-3">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Entrar al Sistema
+                    </button>
+                </form>
+
+                <!-- Acceso Rápido Demo -->
+                <div class="border-top pt-3 mt-4 text-center">
+                    <p class="text-muted small mb-2"><i class="bi bi-magic me-1"></i> Acceso rápido para demostración:</p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="demo-pill-btn" onclick="fillCredentials('admin', 'admin123')">
+                            <i class="bi bi-shield-check text-purple"></i> Admin (admin / admin123)
+                        </button>
+                        <button type="button" class="demo-pill-btn" onclick="fillCredentials('lector', 'lector123')">
+                            <i class="bi bi-book text-info"></i> Lector (lector / lector123)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <p class="text-muted small mb-0">¿No tienes cuenta de lector? 
+                        <a href="{{ url_for('register') }}" class="text-primary fw-semibold text-decoration-none">Regístrate aquí</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function fillCredentials(user, pass) {
+    document.getElementById('username').value = user;
+    document.getElementById('password').value = pass;
+}
+</script>
+{% endblock %}
+

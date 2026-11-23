@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de Control{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Panel de Control de la Biblioteca</h2>
+        <p class="text-muted mb-0">Resumen general del catálogo, inventario y estado de los préstamos.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('book_create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Registrar Libro
+        </a>
+        <a href="{{ url_for('loan_create') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left-right me-1"></i> Nuevo Préstamo
+        </a>
+    </div>
+</div>
+
+<!-- Métricas Principales -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card metric-card shadow-sm h-100 bg-white border-start border-primary border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Títulos Registrados</span>
+                        <h2 class="fw-bold my-1">{{ metrics.total_books }}</h2>
+                        <span class="text-muted small">{{ metrics.total_copies }} ejemplares totales</span>
+                    </div>
+                    <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                        <i class="bi bi-bookshelf fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card metric-card shadow-sm h-100 bg-white border-start border-success border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Ejemplares Disponibles</span>
+                        <h2 class="fw-bold my-1 text-success">{{ metrics.available_copies }}</h2>
+                        <span class="text-muted small">Listos para préstamo</span>
+                    </div>
+                    <div class="bg-success-subtle text-success p-3 rounded-circle">
+                        <i class="bi bi-check2-circle fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card metric-card shadow-sm h-100 bg-white border-start border-info border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Préstamos Activos</span>
+                        <h2 class="fw-bold my-1 text-info">{{ metrics.active_loans }}</h2>
+                        <span class="text-muted small">{{ metrics.returned_loans }} préstamos devueltos</span>
+                    </div>
+                    <div class="bg-info-subtle text-info p-3 rounded-circle">
+                        <i class="bi bi-arrow-repeat fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card metric-card shadow-sm h-100 bg-white border-start border-danger border-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Préstamos Vencidos</span>
+                        <h2 class="fw-bold my-1 text-danger">{{ metrics.overdue_loans }}</h2>
+                        <span class="text-muted small">Requieren atención</span>
+                    </div>
+                    <div class="bg-danger-subtle text-danger p-3 rounded-circle">
+                        <i class="bi bi-exclamation-triangle fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Segunda Fila: Préstamos Recientes y Acciones Rápidas -->
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Actividad Reciente de Préstamos</h5>
+                <a href="{{ url_for('loans_list') }}" class="btn btn-sm btn-outline-secondary">Ver Todos</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Libro</th>
+                                <th>Lector</th>
+                                <th>Fecha Préstamo</th>
+                                <th>Fecha Límite</th>
+                                <th>Estado</th>
+                                <th class="text-end">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if metrics.recent_loans %}
+                                {% for loan in metrics.recent_loans %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('book_detail', book_id=loan['book_id']) }}" class="text-dark fw-semibold text-decoration-none">
+                                            {{ loan['book_title'] }}
+                                        </a>
+                                    </td>
+                                    <td>{{ loan['user_name'] }}</td>
+                                    <td>{{ loan['loan_date'] }}</td>
+                                    <td>
+                                        {% if loan['status'] == 'vencido' %}
+                                            <span class="text-danger fw-semibold">{{ loan['due_date'] }}</span>
+                                        {% else %}
+                                            {{ loan['due_date'] }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-status-{{ loan['status'] }} text-capitalize">
+                                            {{ loan['status'] }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        {% if loan['status'] in ('activo', 'vencido') %}
+                                        <form method="POST" action="{{ url_for('loan_return', loan_id=loan['id']) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-success" title="Registrar Devolución">
+                                                <i class="bi bi-arrow-return-left"></i> Devolver
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <span class="text-muted small"><i class="bi bi-check-all text-success"></i> Devuelto</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">No hay registros de préstamos todavía.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Columna Lateral: Accesos Directos y Lectores -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-lightning-charge me-2 text-warning"></i>Accesos Rápidos</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('catalog') }}" class="btn btn-outline-primary text-start d-flex align-items-center justify-content-between p-3">
+                        <div>
+                            <strong>Ver Catálogo Completo</strong>
+                            <div class="small text-muted">Explorar y filtrar todos los libros</div>
+                        </div>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                    <a href="{{ url_for('loans_list', status='vencido') }}" class="btn btn-outline-danger text-start d-flex align-items-center justify-content-between p-3">
+                        <div>
+                            <strong>Ver Préstamos Vencidos</strong>
+                            <div class="small text-muted">Filtrar los {{ metrics.overdue_loans }} préstamos con retraso</div>
+                        </div>
+                        <i class="bi bi-exclamation-octagon"></i>
+                    </a>
+                    <a href="{{ url_for('users_list') }}" class="btn btn-outline-secondary text-start d-flex align-items-center justify-content-between p-3">
+                        <div>
+                            <strong>Gestión de Lectores</strong>
+                            <div class="small text-muted">{{ metrics.total_readers }} lectores registrados en el sistema</div>
+                        </div>
+                        <i class="bi bi-people"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

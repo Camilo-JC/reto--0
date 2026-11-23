@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Biblioteca Digital{% endblock %} - Gestión de Libros y Préstamos</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('index') }}">
+                <i class="bi bi-book-half text-primary fs-4"></i>
+                <span>BiblioTech</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'catalog' %}active{% endif %}" href="{{ url_for('catalog') }}">
+                            <i class="bi bi-journal-bookmark me-1"></i> Catálogo
+                        </a>
+                    </li>
+
+                    {% if g.user and g.user['role'] == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+                            <i class="bi bi-speedometer2 me-1"></i> Panel Admin
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'loans_list' %}active{% endif %}" href="{{ url_for('loans_list') }}">
+                            <i class="bi bi-arrow-left-right me-1"></i> Préstamos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'users_list' %}active{% endif %}" href="{{ url_for('users_list') }}">
+                            <i class="bi bi-people me-1"></i> Usuarios
+                        </a>
+                    </li>
+                    {% elif g.user and g.user['role'] == 'lector' %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint in ('my_loans', 'loans_list') %}active{% endif %}" href="{{ url_for('my_loans') }}">
+                            <i class="bi bi-bookmark-check me-1"></i> Mis Préstamos
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    {% if g.user and g.user['role'] == 'admin' %}
+                    <li class="nav-item me-lg-2 mb-2 mb-lg-0">
+                        <a href="{{ url_for('book_create') }}" class="btn btn-sm btn-primary d-flex align-items-center gap-1">
+                            <i class="bi bi-plus-circle"></i> Nuevo Libro
+                        </a>
+                    </li>
+                    <li class="nav-item me-lg-2 mb-2 mb-lg-0">
+                        <a href="{{ url_for('loan_create') }}" class="btn btn-sm btn-outline-light d-flex align-items-center gap-1">
+                            <i class="bi bi-arrow-left-right"></i> Prestar Libro
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% if g.user %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle fs-5"></i>
+                            <span>{{ g.user['full_name'] }}</span>
+                            <span class="badge {% if g.user['role'] == 'admin' %}badge-role-admin{% else %}badge-role-lector{% endif %} text-uppercase" style="font-size: 0.65rem;">
+                                {{ g.user['role'] }}
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userMenu">
+                            <li><h6 class="dropdown-header">Conectado como <strong>@{{ g.user['username'] }}</strong></h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('profile') }}"><i class="bi bi-person me-2"></i> Mi Perfil</a></li>
+                            {% if g.user['role'] == 'lector' %}
+                            <li><a class="dropdown-item" href="{{ url_for('my_loans') }}"><i class="bi bi-bookmark me-2"></i> Mis Préstamos</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('login') }}">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Iniciar Sesión
+                        </a>
+                    </li>
+                    <li class="nav-item ms-lg-2">
+                        <a class="btn btn-sm btn-outline-primary text-white" href="{{ url_for('register') }}">
+                            <i class="bi bi-person-plus me-1"></i> Registrarse
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm d-flex align-items-center" role="alert">
+                    {% if category == 'success' %}
+                        <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+                    {% elif category == 'danger' %}
+                        <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+                    {% elif category == 'warning' %}
+                        <i class="bi bi-exclamation-circle-fill me-2 fs-5"></i>
+                    {% else %}
+                        <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+                    {% endif %}
+                    <div class="flex-grow-1">{{ message }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-top py-4 mt-auto text-secondary text-center small">
+        <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+            <div>
+                <strong class="text-dark"><i class="bi bi-book-half text-primary"></i> BiblioTech</strong> &mdash; Sistema de Gestión de Libros y Préstamos
+            </div>
+            <div>
+                Desarrollado en Python &bull; Flask &bull; SQLite
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
+

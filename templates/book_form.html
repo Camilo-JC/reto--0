@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}{% if action == 'new' %}Registrar Nuevo Libro{% else %}Editar Libro: {{ book['title'] }}{% endblock %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="mb-3">
+            <a href="{% if action == 'edit' %}{{ url_for('book_detail', book_id=book['id']) }}{% else %}{{ url_for('catalog') }}{% endif %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i> Cancelar y Volver
+            </a>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h4 class="fw-bold mb-0">
+                    <i class="bi bi-journal-plus text-primary me-2"></i>
+                    {% if action == 'new' %}Registrar Nuevo Libro en el Catálogo{% else %}Editar Información del Libro{% endif %}
+                </h4>
+            </div>
+            <div class="card-body p-4 p-md-5">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="title" class="form-label fw-semibold">Título del Libro <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{% if action == 'edit' %}{{ book['title'] }}{% else %}{{ form_data.get('title', '') }}{% endif %}" 
+                                   placeholder="ej. El amor en los tiempos del cólera" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="author" class="form-label fw-semibold">Autor <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="author" name="author" 
+                                   value="{% if action == 'edit' %}{{ book['author'] }}{% else %}{{ form_data.get('author', '') }}{% endif %}" 
+                                   placeholder="ej. Gabriel García Márquez" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="isbn" class="form-label fw-semibold">Código ISBN <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="isbn" name="isbn" 
+                                   value="{% if action == 'edit' %}{{ book['isbn'] }}{% else %}{{ form_data.get('isbn', '') }}{% endif %}" 
+                                   placeholder="ej. 978-0307389732" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="category" class="form-label fw-semibold">Categoría / Género <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="category" name="category" list="categoryOptions"
+                                   value="{% if action == 'edit' %}{{ book['category'] }}{% else %}{{ form_data.get('category', '') }}{% endif %}" 
+                                   placeholder="ej. Ficción / Novela" required>
+                            <datalist id="categoryOptions">
+                                <option value="Ficción / Novela">
+                                <option value="Ciencia Ficción / Distopía">
+                                <option value="Clásico / Novela">
+                                <option value="Infantil / Filosofía">
+                                <option value="Tecnología / Programación">
+                                <option value="Ciencia / Divulgación">
+                                <option value="Historia">
+                                <option value="Filosofía">
+                            </datalist>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="publication_year" class="form-label fw-semibold">Año Publicación</label>
+                            <input type="number" class="form-control" id="publication_year" name="publication_year" 
+                                   value="{% if action == 'edit' %}{{ book['publication_year'] or '' }}{% else %}{{ form_data.get('publication_year', '') }}{% endif %}" 
+                                   min="1000" max="2100" placeholder="ej. 1985">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="total_copies" class="form-label fw-semibold">Total de Copias <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="total_copies" name="total_copies" 
+                                   value="{% if action == 'edit' %}{{ book['total_copies'] }}{% else %}{{ form_data.get('total_copies', '3') }}{% endif %}" 
+                                   min="1" required>
+                            {% if action == 'edit' %}
+                            <small class="text-muted d-block mt-1">Disp: {{ book['available_copies'] }} | Prestadas: {{ book['total_copies'] - book['available_copies'] }}</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12">
+                            <label for="description" class="form-label fw-semibold">Descripción o Sinopsis</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" 
+                                      placeholder="Resumen o sinopsis informativa sobre la trama o tema del libro...">{% if action == 'edit' %}{{ book['description'] }}{% else %}{{ form_data.get('description', '') }}{% endif %}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <a href="{% if action == 'edit' %}{{ url_for('book_detail', book_id=book['id']) }}{% else %}{{ url_for('catalog') }}{% endif %}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> {% if action == 'new' %}Registrar Libro{% else %}Guardar Cambios{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
