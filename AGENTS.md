@@ -35,3 +35,6 @@ Permite gestionar el catálogo e inventario con roles de administrador y lector.
 - No hacer commit ni push automáticamente sin autorización explícita.
 
 ## Lecciones aprendidas
+- Control de acceso: las operaciones no autorizadas sobre recursos de otro usuario se rechazan con código 403 Forbidden, nunca con redirección 302.
+- Validación de entradas: los formularios validan longitud máxima en el servidor antes de persistir datos.
+- Manejo de errores: los recursos inexistentes responden con código 404 Not Found y vista dedicada, sin redirecciones engañosas.

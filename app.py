@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 load_dotenv()
 from flask import (
     Flask,
+    abort,
     flash,
     g,
     redirect,
@@ -129,8 +130,13 @@ def register():
         errors = []
         if not username or len(username) < 3:
             errors.append("El nombre de usuario debe tener al menos 3 caracteres.")
+        elif len(username) > 50:
+            errors.append("El nombre de usuario no debe superar los 50 caracteres.")
+
         if not full_name:
             errors.append("El nombre completo es obligatorio.")
+        elif len(full_name) > 100:
+            errors.append("El nombre completo no debe superar los 100 caracteres.")
         if not email or "@" not in email:
             errors.append("Ingresa un correo electrónico válido.")
         if not password or len(password) < 6:
@@ -263,8 +269,7 @@ def catalog():
 def book_detail(book_id):
     book = db.get_book_by_id(book_id)
     if not book:
-        flash("Libro no encontrado.", "danger")
-        return redirect(url_for("catalog"))
+        abort(404)
 
     user_has_loan = False
     active_loan = None
@@ -357,8 +362,7 @@ def book_create():
 def book_edit(book_id):
     book = db.get_book_by_id(book_id)
     if not book:
-        flash("Libro no encontrado.", "danger")
-        return redirect(url_for("catalog"))
+        abort(404)
 
     if request.method == "POST":
         title = request.form.get("title", "").strip()
@@ -408,8 +412,7 @@ def book_edit(book_id):
 def book_delete(book_id):
     book = db.get_book_by_id(book_id)
     if not book:
-        flash("Libro no encontrado.", "danger")
-        return redirect(url_for("catalog"))
+        abort(404)
 
     success, error = db.delete_book(book_id)
     if not success:
@@ -519,8 +522,7 @@ def loan_return(loan_id):
 
     # Permitir si es admin O si es el mismo usuario lector que lo tiene prestado
     if g.user["role"] != "admin" and g.user["id"] != loan["user_id"]:
-        flash("No tienes permiso para devolver este préstamo.", "danger")
-        return redirect(url_for("loans_list"))
+        abort(403)
 
     success, error = db.return_loan(loan_id)
     if not success:
@@ -566,6 +568,14 @@ def users_list():
 
     users = db.get_all_users()
     return render_template("users.html", users=users)
+
+
+# ==========================================
+# Manejo de Errores HTTP
+# ==========================================
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("404.html"), 404
 
 
 # ==========================================
