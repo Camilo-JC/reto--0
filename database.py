@@ -3,9 +3,10 @@ Módulo de base de datos para la aplicación de Gestión de Libros y Préstamos.
 Utiliza SQLite3 estándar con Row factory para consultas estructuradas.
 """
 
-import sqlite3
 import os
-from datetime import datetime, date, timedelta
+import sqlite3
+from datetime import date, timedelta
+
 from werkzeug.security import generate_password_hash
 
 DB_NAME = "biblioteca.db"
@@ -568,9 +569,9 @@ def create_loan(user_id, book_id, days=14, notes=None):
 
         conn.commit()
         return loan_id, None
-    except Exception as e:
+    except sqlite3.Error as e:
         conn.rollback()
-        return None, f"Error al registrar préstamo: {str(e)}"
+        return None, f"Error al registrar préstamo: {e!s}"
     finally:
         conn.close()
 
@@ -614,9 +615,9 @@ def return_loan(loan_id):
 
         conn.commit()
         return True, None
-    except Exception as e:
+    except sqlite3.Error as e:
         conn.rollback()
-        return False, f"Error al procesar devolución: {str(e)}"
+        return False, f"Error al procesar devolución: {e!s}"
     finally:
         conn.close()
 

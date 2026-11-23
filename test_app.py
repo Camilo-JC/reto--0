@@ -9,16 +9,17 @@ Verifica:
 6. Búsqueda y filtrado de catálogo.
 """
 
-import unittest
 import os
 import tempfile
-from app import app
+import unittest
+
 import database as db
+from app import app
 
 
 class BibliotecaTestCase(unittest.TestCase):
     def setUp(self):
-        # Crear base de datos temporal para pruebas
+        self.original_db_path = db.DB_PATH
         self.db_fd, self.db_path = tempfile.mkstemp()
         db.DB_PATH = self.db_path
 
@@ -35,6 +36,7 @@ class BibliotecaTestCase(unittest.TestCase):
         os.close(self.db_fd)
         if os.path.exists(self.db_path):
             os.unlink(self.db_path)
+        db.DB_PATH = self.original_db_path
 
     # ----------------------------------------------------
     # Autenticación y Sesiones
@@ -53,20 +55,20 @@ class BibliotecaTestCase(unittest.TestCase):
         """Verifica que el administrador puede iniciar sesión y acceder al dashboard."""
         response = self.login("admin", "admin123")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Panel de Control de la Biblioteca".encode("utf-8"), response.data)
-        self.assertIn("Administrador Principal".encode("utf-8"), response.data)
+        self.assertIn(b"Panel de Control de la Biblioteca", response.data)
+        self.assertIn(b"Administrador Principal", response.data)
 
     def test_login_lector(self):
         """Verifica que el lector puede iniciar sesión y es redirigido al catálogo."""
         response = self.login("lector", "lector123")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Catálogo de Libros".encode("utf-8"), response.data)
-        self.assertIn("Ana García Lectora".encode("utf-8"), response.data)
+        self.assertIn("Catálogo de Libros".encode(), response.data)
+        self.assertIn("Ana García Lectora".encode(), response.data)
 
     def test_login_invalid(self):
         """Verifica el rechazo de credenciales incorrectas."""
         response = self.login("admin", "contraseñaincorrecta")
-        self.assertIn("Usuario o contraseña incorrectos".encode("utf-8"), response.data)
+        self.assertIn("Usuario o contraseña incorrectos".encode(), response.data)
 
     def test_register_reader(self):
         """Verifica el registro de un nuevo lector."""
@@ -82,11 +84,11 @@ class BibliotecaTestCase(unittest.TestCase):
             follow_redirects=True,
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn("¡Cuenta de lector creada con éxito!".encode("utf-8"), response.data)
+        self.assertIn("¡Cuenta de lector creada con éxito!".encode(), response.data)
 
         # Iniciar sesión con el nuevo usuario
         login_res = self.login("nuevolector", "password123")
-        self.assertIn("Nuevo Lector Demo".encode("utf-8"), login_res.data)
+        self.assertIn(b"Nuevo Lector Demo", login_res.data)
 
     # ----------------------------------------------------
     # Control de Permisos
@@ -97,11 +99,11 @@ class BibliotecaTestCase(unittest.TestCase):
 
         # Intento de acceso a dashboard
         res = self.client.get("/dashboard", follow_redirects=True)
-        self.assertIn("Acceso denegado: Se requieren permisos de Administrador".encode("utf-8"), res.data)
+        self.assertIn(b"Acceso denegado: Se requieren permisos de Administrador", res.data)
 
         # Intento de acceso a nuevo libro
         res2 = self.client.get("/books/new", follow_redirects=True)
-        self.assertIn("Acceso denegado".encode("utf-8"), res2.data)
+        self.assertIn(b"Acceso denegado", res2.data)
 
     # ----------------------------------------------------
     # CRUD de Libros
@@ -125,12 +127,12 @@ class BibliotecaTestCase(unittest.TestCase):
             follow_redirects=True,
         )
         self.assertEqual(res.status_code, 200)
-        self.assertIn("Clean Code".encode("utf-8"), res.data)
-        self.assertIn("Robert C. Martin".encode("utf-8"), res.data)
+        self.assertIn(b"Clean Code", res.data)
+        self.assertIn(b"Robert C. Martin", res.data)
 
         # Comprobar en catálogo
         cat_res = self.client.get("/catalog?q=Clean Code")
-        self.assertIn("Clean Code".encode("utf-8"), cat_res.data)
+        self.assertIn(b"Clean Code", cat_res.data)
 
     def test_edit_book(self):
         """Verifica la edición de un libro existente."""
@@ -151,7 +153,7 @@ class BibliotecaTestCase(unittest.TestCase):
             follow_redirects=True,
         )
         self.assertEqual(res.status_code, 200)
-        self.assertIn("actualizado exitosamente".encode("utf-8"), res.data)
+        self.assertIn(b"actualizado exitosamente", res.data)
 
         book = db.get_book_by_id(1)
         self.assertEqual(book["title"], "Cien años de soledad (Edición Conmemorativa)")
@@ -172,7 +174,7 @@ class BibliotecaTestCase(unittest.TestCase):
         # Solicitar préstamo
         req_res = self.client.post("/loans/request/2", data={"days": "14", "notes": "Para examen"}, follow_redirects=True)
         self.assertEqual(req_res.status_code, 200)
-        self.assertIn("Préstamo de &#39;Don Quijote de la Mancha&#39; registrado con éxito".encode("utf-8"), req_res.data)
+        self.assertIn("Préstamo de &#39;Don Quijote de la Mancha&#39; registrado con éxito".encode(), req_res.data)
 
         # Comprobar que el inventario bajó en 1
         book_after_loan = db.get_book_by_id(2)
@@ -187,7 +189,7 @@ class BibliotecaTestCase(unittest.TestCase):
         # Lector devuelve el libro
         ret_res = self.client.post(f"/loans/{loan['id']}/return", follow_redirects=True)
         self.assertEqual(ret_res.status_code, 200)
-        self.assertIn("devuelto con éxito".encode("utf-8"), ret_res.data)
+        self.assertIn("devuelto con éxito".encode(), ret_res.data)
 
         # Comprobar que el inventario volvió al valor inicial
         book_after_return = db.get_book_by_id(2)
@@ -202,16 +204,16 @@ class BibliotecaTestCase(unittest.TestCase):
 
         # Segundo intento de préstamo del mismo libro
         res = self.client.post("/loans/request/5", data={"days": "14"}, follow_redirects=True)
-        self.assertIn("ya tiene un préstamo activo de este mismo libro".encode("utf-8"), res.data)
+        self.assertIn("ya tiene un préstamo activo de este mismo libro".encode(), res.data)
 
     def test_catalog_search_and_filter(self):
         """Verifica la búsqueda por texto y filtro por categoría."""
         res_search = self.client.get("/catalog?q=Quijote")
-        self.assertIn("Don Quijote de la Mancha".encode("utf-8"), res_search.data)
-        self.assertNotIn("1984".encode("utf-8"), res_search.data)
+        self.assertIn(b"Don Quijote de la Mancha", res_search.data)
+        self.assertNotIn(b"1984", res_search.data)
 
         res_cat = self.client.get("/catalog?category=Tecnología / Programación")
-        self.assertIn("Python Crash Course".encode("utf-8"), res_cat.data)
+        self.assertIn(b"Python Crash Course", res_cat.data)
 
 
 if __name__ == "__main__":

@@ -5,21 +5,21 @@ y diseño responsivo con Bootstrap 5.
 """
 
 import os
+from datetime import date
 from functools import wraps
-from datetime import date, datetime
+
 from dotenv import load_dotenv
 
 load_dotenv()
 from flask import (
     Flask,
+    flash,
+    g,
+    redirect,
     render_template,
     request,
-    redirect,
-    url_for,
-    flash,
     session,
-    g,
-    abort,
+    url_for,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -142,7 +142,7 @@ def register():
             for err in errors:
                 flash(err, "danger")
         else:
-            user_id, error = db.create_user(
+            _user_id, error = db.create_user(
                 username=username,
                 password=password,
                 full_name=full_name,
@@ -466,7 +466,7 @@ def loan_create():
             flash("Datos del formulario inválidos.", "danger")
             return redirect(url_for("loan_create"))
 
-        loan_id, error = db.create_loan(user_id=user_id, book_id=book_id, days=days, notes=notes)
+        _loan_id, error = db.create_loan(user_id=user_id, book_id=book_id, days=days, notes=notes)
         if error:
             flash(error, "danger")
         else:
@@ -496,7 +496,7 @@ def loan_request(book_id):
     days = int(request.form.get("days", 14))
     notes = request.form.get("notes", "").strip()
 
-    loan_id, error = db.create_loan(user_id=g.user["id"], book_id=book_id, days=days, notes=notes)
+    _loan_id, error = db.create_loan(user_id=g.user["id"], book_id=book_id, days=days, notes=notes)
     if error:
         flash(error, "danger")
     else:
@@ -551,7 +551,7 @@ def users_list():
         elif role not in ("admin", "lector"):
             flash("Rol no válido.", "danger")
         else:
-            user_id, error = db.create_user(
+            _user_id, error = db.create_user(
                 username=username,
                 password=password,
                 full_name=full_name,
